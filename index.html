@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year Progress Tracker</title>
+    <style>
+        :root {
+            --primary-color-light: #28a745; /* Green */
+            --secondary-color-light: #d3d3d3; /* Grey */
+            --background-light: #f6f8fa; /* White */
+            --text-light: #333; /* Dark text */
+            --primary-color-dark: #28a745; /* Green */
+            --secondary-color-dark: #a9a9a9; /* Grey */
+            --background-dark: #22272e; /* Black */
+            --text-dark: #e1e4e8; /* Light text for dark mode */
+            --progress-text-color-light: #333; /* Progress text color in light mode */
+            --progress-text-color-dark: #ffffff; /* Progress text color in dark mode */
+
+            --dropdown-background-light: #fff; /* Dropdown background for light mode */
+            --dropdown-background-dark: #333; /* Dropdown background for dark mode */
+            --dropdown-item-light: #000; /* Item text color for light mode */
+            --dropdown-item-dark: #fff; /* Item text color for dark mode */
+
+            --container-background-light: #ffffff; /* Light container background */
+            --container-background-dark: #2c3138; /* Dark container background */
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        body.light-mode {
+            background-color: var(--background-light);
+            color: var(--text-light);
+        }
+
+        body.dark-mode {
+            background-color: #000000; /* Black background for dark mode */
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 500px;
+            text-align: center;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background-color: var(--container-background-light); /* Default for light mode */
+            width: 100%;
+            margin: 0 20px;
+        }
+
+        body.dark-mode .container {
+            background-color: #2c3138; /* Dark grey container background for dark mode */
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--primary-color-light);
+        }
+
+        .progress-bar-container {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            position: relative;
+            height: 20px;
+            background: var(--secondary-color-light);
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        .progress-bar-inner {
+            height: 100%;
+            background: var(--primary-color-light);
+            width: 0;
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+
+        .progress-percentage {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--progress-text-color-light);
+        }
+
+        .datetime {
+            margin: 20px 0;
+            font-size: 1.2rem;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 30px;
+            border-radius: 30px;
+            background-color: var(--primary-color-light);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #fff;
+            transition: transform 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Light Mode Icon */
+        .theme-toggle.light-mode {
+            transform: translateX(0);
+        }
+
+        /* Dark Mode Icon */
+        .theme-toggle.dark-mode {
+            transform: translateX(20px);
+        }
+
+        .theme-toggle.light-mode::before {
+            content: "🌙";
+            font-size: 16px;
+        }
+
+        .theme-toggle.dark-mode::before {
+            content: "☀️";
+            font-size: 18px;
+        }
+
+        .selectable {
+            cursor: pointer;
+            text-decoration: underline;
+            position: relative;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            background: var(--dropdown-background-light); /* Default for light mode */
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 10;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .dropdown.open {
+            display: block;
+        }
+
+        .dropdown-item {
+            margin: 5px 0;
+            cursor: pointer;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            color: var(--dropdown-item-light); /* Default for light mode */
+        }
+
+        .dropdown-item:hover {
+            background: var(--secondary-color-light);
+            color: #fff;
+            padding: 3px 5px;
+            border-radius: 3px;
+        }
+
+        .dropdown-container {
+            position: relative;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="light-mode" onload="initializeProgress()">
+    <div class="container">
+        <h1 id="year-title">Year Progress</h1>
+        <div class="progress-percentage" id="progress-percentage">0%</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar">
+                <div class="progress-bar-inner" id="progress-bar-inner"></div>
+            </div>
+        </div>
+        <div class="datetime">
+            <span id="current-date">XX-Yyy-zzzz</span> 
+            <div class="dropdown-container">
+                <span id="current-time" class="selectable">12:00:00</span>
+                <div id="time-format-dropdown" class="dropdown">
+                    <div class="dropdown-item" data-format="24">24 Hour format</div>
+                    <div class="dropdown-item" data-format="12">12 Hour format AM/PM</div>
+                </div>
+            </div>
+            <div class="dropdown-container">
+                <span id="time-zone" class="selectable">IST (UTC+05:30)</span>
+                <div id="timezone-dropdown" class="dropdown"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Toggle Container -->
+    <div class="theme-toggle-container" id="theme-toggle-container">
+        <div class="theme-toggle light-mode" id="theme-toggle"></div>
+    </div>
+
+    <script>
+        const timezones = [
+            { zone: "Asia/Kolkata", label: "IST (UTC+05:30)" },
+            { zone: "Europe/London", label: "GMT (UTC+00:00)" },
+            { zone: "America/New_York", label: "EST (UTC-05:00)" },
+            { zone: "Asia/Tokyo", label: "JST (UTC+09:00)" },
+            { zone: "Australia/Sydney", label: "AEDT (UTC+11:00)" },
+            { zone: "Europe/Paris", label: "CET (UTC+01:00)" },
+            { zone: "America/Los_Angeles", label: "PST (UTC-08:00)" },
+            { zone: "Asia/Shanghai", label: "CST (UTC+08:00)" },
+            { zone: "America/Chicago", label: "CST (UTC-06:00)" },
+            { zone: "Asia/Dubai", label: "GST (UTC+04:00)" }
+        ];
+
+        let selectedTimezone = "Asia/Kolkata";
+        let timeFormat = "24"; // Default 24-hour format
+
+        function populateTimezoneDropdown() {
+            const timezoneDropdown = document.getElementById("timezone-dropdown");
+            timezones.forEach(timezone => {
+                const option = document.createElement("div");
+                option.classList.add("dropdown-item");
+                option.setAttribute("data-timezone", timezone.zone);
+                option.textContent = timezone.label;
+                timezoneDropdown.appendChild(option);
+            });
+        }
+
+        function changeTimeZone(event) {
+            const timezone = event.target.getAttribute("data-timezone");
+            const timezoneLabel = timezones.find(t => t.zone === timezone).label;
+            document.getElementById("time-zone").textContent = timezoneLabel;
+            selectedTimezone = timezone;
+            updateTime();
+            document.querySelector("#timezone-dropdown").classList.remove("open");
+        }
+
+        function updateProgress() {
+            const now = new Date();
+            const startOfYear = new Date(now.getFullYear(), 0, 0);
+            const diff = now - startOfYear; // difference in milliseconds
+            const yearDuration = 365 * 24 * 60 * 60 * 1000; // total milliseconds in a year (approx 365 days)
+
+            const progressPercentage = (diff / yearDuration) * 100;
+
+            const progressBarInner = document.getElementById("progress-bar-inner");
+            progressBarInner.style.width = progressPercentage + "%";
+            //document.getElementById("progress-percentage").textContent = Math.round(progressPercentage) + "%";
+			//document.getElementById("progress-percentage").textContent = progressPercentage + "%";
+			document.getElementById("progress-percentage").textContent = progressPercentage.toFixed(6) + "%";
+
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const options = {
+                timeZone: selectedTimezone,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: timeFormat === "12"
+            };
+            const timeInZone = new Intl.DateTimeFormat('en-GB', options).format(now);
+            document.getElementById("current-time").textContent = timeInZone;
+
+            const dateOptions = { day: '2-digit', month: 'short', year: 'numeric' };
+            const currentDate = now.toLocaleDateString('en-GB', dateOptions).replace(/ /g, '-');
+            document.getElementById("current-date").textContent = currentDate;
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.getElementById("theme-toggle");
+            const container = document.querySelector(".container");
+            const progressText = document.getElementById("progress-percentage");
+            const dropdowns = document.querySelectorAll(".dropdown");
+            const dropdownItems = document.querySelectorAll(".dropdown-item");
+
+            if (body.classList.contains("light-mode")) {
+                body.classList.replace("light-mode", "dark-mode");
+                container.style.backgroundColor = "var(--background-dark)";
+                progressText.style.color = "var(--progress-text-color-dark)"; // Change progress text color to dark mode
+
+                // Update dropdown styles for dark mode
+                dropdowns.forEach(dropdown => {
+                    dropdown.style.backgroundColor = "var(--dropdown-background-dark)";
+                });
+
+                dropdownItems.forEach(item => {
+                    item.style.color = "var(--dropdown-item-dark)";
+                });
+
+                // Switch button icon to sun
+                button.classList.add("dark-mode");
+                button.classList.remove("light-mode");
+            } else {
+                body.classList.replace("dark-mode", "light-mode");
+                container.style.backgroundColor = "var(--background-light)";
+                progressText.style.color = "var(--progress-text-color-light)"; // Change progress text color to light mode
+
+                // Update dropdown styles for light mode
+                dropdowns.forEach(dropdown => {
+                    dropdown.style.backgroundColor = "var(--dropdown-background-light)";
+                });
+
+                dropdownItems.forEach(item => {
+                    item.style.color = "var(--dropdown-item-light)";
+                });
+
+                // Switch button icon to moon
+                button.classList.add("light-mode");
+                button.classList.remove("dark-mode");
+            }
+        }
+
+        function toggleDropdown(event) {
+            const dropdown = event.target.nextElementSibling;
+            const isOpen = dropdown.classList.contains("open");
+            document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("open"));
+            if (!isOpen) dropdown.classList.add("open");
+        }
+
+        function changeTimeFormat(event) {
+            timeFormat = event.target.getAttribute("data-format");
+            document.querySelector("#time-format-dropdown").classList.remove("open");
+            updateTime();
+        }
+
+        document.getElementById("theme-toggle-container").addEventListener("click", toggleTheme);
+
+        document.getElementById("current-time").addEventListener("click", toggleDropdown);
+        document.getElementById("time-zone").addEventListener("click", toggleDropdown);
+        document.getElementById("time-format-dropdown").addEventListener("click", (event) => {
+            if (event.target.classList.contains("dropdown-item")) {
+                changeTimeFormat(event);
+            }
+        });
+
+        document.getElementById("timezone-dropdown").addEventListener("click", (event) => {
+            if (event.target.classList.contains("dropdown-item")) {
+                changeTimeZone(event);
+            }
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!event.target.classList.contains("selectable") && !event.target.classList.contains("dropdown-item")) {
+                document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("open"));
+            }
+        });
+
+        populateTimezoneDropdown();
+        setInterval(() => {
+            updateProgress();
+            updateTime();
+        }, 1000);
+    </script>
+</body>
+</html>
